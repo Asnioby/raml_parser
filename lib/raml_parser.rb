@@ -1,5 +1,5 @@
-require './lib/raml_parser/yaml_helper'
-require './lib/raml_parser/model'
+require 'raml_parser/yaml_helper'
+require 'raml_parser/model'
 require 'open-uri'
 
 module RamlParser
