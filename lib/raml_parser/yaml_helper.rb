@@ -86,37 +86,62 @@ module RamlParser
 
   class YamlHelper
     require 'yaml'
+    require 'open-uri'
 
-    def self.read_yaml(path)
+    def self.root_path(path)
+      if URI.parse(path)
+        root = path.split('/')[0..-2].join('/')
+      else
+        root = File.dirname(path)
+      end
+      root
+    end
+
+    def self.base_name(path)
+      if URI.parse(path)
+        root = path.split('/')[-1]
+      else
+        root = File.basename(path)
+      end
+      root
+    end
+
+    def self.read_yaml(name, root, local)
       # add support for !include tags
+
       Psych.add_domain_type 'include', 'include' do |_, value|
-        case value
-          when /^https?:\/\//
-            # TODO implement remote loading of included files
-            ''
-          else
-            case value
-              when /\.raml$/
-                read_yaml(value)
-              when /\.ya?ml$/
-                read_yaml(value)
-              else
-                File.read(value)
+        newpath = root + '/' + value
+        newroot = root_path(newpath)
+        newbase = base_name(newpath)
+        if self.is_yaml?(newpath)
+            read_yaml(newbase, newroot, local)
+        else
+            if local
+              Dir.chdir(newroot)
+              File.read(newbase)
+            else
+              open(root + '/' + value){ |f| f.read }
             end
         end
       end
 
-      # change working directory so that !include works properly
-      pwd_old = Dir.pwd
-      Dir.chdir(File.dirname(path))
-      raw = File.read(File.basename(path))
-      node = YAML.load(raw)
-      Dir.chdir(pwd_old)
-      node
+        if local
+          Dir.chdir(root)
+          raw = File.read(name)
+        else
+          raw = open(root + '/' + name){ |f| f.read }
+        end
+
+     node = self.is_yaml?(name) ? YAML.load(raw) : raw
+
     end
 
     def self.dump_yaml(yaml)
       YAML.dump(yaml)
+    end
+
+    def self.is_yaml?(path)
+      [ 'yaml', 'yml', 'raml' ].include? path.split('.').last.downcase
     end
   end
 end

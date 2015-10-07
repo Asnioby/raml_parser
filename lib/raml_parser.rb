@@ -1,17 +1,31 @@
-require 'raml_parser/yaml_helper'
-require 'raml_parser/model'
+require './lib/raml_parser/yaml_helper'
+require './lib/raml_parser/model'
+require 'open-uri'
 
 module RamlParser
   class Parser
-    def self.parse_file(path)
+
+    def self.parse_file(path, option={})
       ensure_raml_0_8(path)
-      node = YamlNode.new(nil, 'root', YamlHelper.read_yaml(path))
+      rootDir =
+      node = YamlNode.new(nil, 'root', YamlHelper.read_yaml(base_name(path), root_path(path),local_path(path)))
       parse_root(node)
+    end
+
+    def self.parse_doc(raml, option={})
+      hash = YAML.load (raml)
+      node = YamlNode.new(nil, 'root', hash)
+      self.parse_root(node)
+    end
+
+    def self.parse_hash(hash, option={})
+      node = YamlNode.new(nil, 'root', hash)
+      self.parse_root(node)
     end
 
     def self.parse_file_with_marks(path)
       ensure_raml_0_8(path)
-      node = YamlNode.new(nil, 'root', YamlHelper.read_yaml(path))
+      node = YamlNode.new(nil, 'root', YamlHelper.read_yaml(base_name(path), root_path(path),local_path(path) ))
       node.mark_all(:unused)
       node.mark(:used)
       root = parse_root(node)
@@ -21,8 +35,39 @@ module RamlParser
     private
 
     def self.ensure_raml_0_8(path)
-      first_line = File.open(path) { |f| f.readline }.strip
+      if URI.parse(path)
+        first_line = open(path){ |f| f.readline }.strip
+      else
+        first_line = File.open(path) { |f| f.readline }.strip
+      end
       raise "File #{path} does not start with RAML 0.8 comment" unless first_line == '#%RAML 0.8'
+    end
+
+    def self.root_path(path)
+      if URI.parse(path)
+        root = path.split('/')[0..-2].join('/')
+      else
+        root = File.dirname(path)
+      end
+     root
+    end
+
+    def self.local_path(path)
+      if URI.parse(path)
+        local = false
+      else
+        local = true
+      end
+      local
+    end
+
+    def self.base_name(path)
+      if URI.parse(path)
+        root = path.split('/')[-1]
+      else
+        root = File.basename(path)
+      end
+      root
     end
 
     def self.parse_root(node)
