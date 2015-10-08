@@ -1,5 +1,5 @@
-require 'raml_parser/yaml_helper'
-require 'raml_parser/model'
+require './lib/raml_parser/yaml_helper'
+require './lib/raml_parser/model'
 require 'open-uri'
 
 module RamlParser
@@ -189,8 +189,13 @@ module RamlParser
       node = node.or_default({})
       body = Model::Body.new(node.key)
       body.example = node.hash('example').value
-      body.schema = node.hash('schema').value
-      body.schema = root.schemas[body.schema] if root.schemas.has_key? body.schema
+      schema = node.hash('schema').value
+      if root.schemas.has_key? schema
+        body.schema = root.schemas[schema]
+        body.schema_name = schema
+      else
+        body.schema = schema
+      end
       body.form_parameters = node.hash('formParameters').hash_values { |n| parse_named_parameter(n, false) }
       # TODO: Form parameters are only allowed for media type application/x-www-form-urlencoded or multipart/form-data
       body

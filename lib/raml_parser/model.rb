@@ -93,17 +93,21 @@ module RamlParser
         @bodies = bodies
         @headers = headers
       end
+      
     end
 
     class Body
-      attr_accessor :media_type, :example, :schema, :form_parameters
 
-      def initialize(media_type, example = nil, schema = nil, form_parameters = {})
+      attr_accessor :media_type, :example, :schema, :form_parameters, :schema_name
+
+      def initialize(media_type, example = nil, schema_name = nil, schema = nil, form_parameters = {})
         @media_type = media_type
         @example = example
         @schema = schema
         @form_parameters = form_parameters
+        @schema_name = schema_name
       end
+
     end
 
     class NamedParameter
@@ -125,6 +129,7 @@ module RamlParser
         @enum = enum
         @pattern = pattern
       end
+      
     end
 
     class Documentation
@@ -134,6 +139,7 @@ module RamlParser
         @title = title
         @content = content
       end
+
     end
 
     class SecurityScheme
